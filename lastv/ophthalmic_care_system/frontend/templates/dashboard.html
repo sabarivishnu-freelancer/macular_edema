@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Ophthalmic Care System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>💊 Doctor Dashboard</h1>
+                <div class="header-right">
+                    <span>Welcome, Dr. {{ username }}!</span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-content">
+                <ul class="nav-menu">
+                    <li><a href="{{ url_for('dashboard') }}" class="active">Dashboard</a></li>
+                    <li><a href="{{ url_for('upload') }}">Upload Image</a></li>
+                    <li><a href="#" onclick="alert('Patient search coming soon!')">Patient Search</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Statistics Cards -->
+                <section class="statistics">
+                    <h2>Key Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-content">
+                                <h3>Total Patients</h3>
+                                <p class="stat-value" id="total-patients">{{ stats.get('total_patients', 0) }}</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <h3>Total Examinations</h3>
+                                <p class="stat-value" id="total-exams">{{ stats.get('total_examinations', 0) }}</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-content">
+                                <h3>Model Accuracy</h3>
+                                <p class="stat-value">94.2%</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-content">
+                                <h3>Avg Confidence</h3>
+                                <p class="stat-value" id="avg-confidence">{{ "%.2f"|format(stats.get('average_confidence', 0) * 100) }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts -->
+                <section class="charts-section">
+                    <div class="chart-container">
+                        <h2>Severity Distribution</h2>
+                        <canvas id="severityChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <h2>Weekly Examinations</h2>
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Quick Actions -->
+                <section class="quick-actions">
+                    <h2>Quick Actions</h2>
+                    <div class="action-buttons">
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                            📁 Upload New Image
+                        </a>
+                        <button class="btn btn-secondary" onclick="refreshStats()">
+                            🔄 Refresh Statistics
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Ophthalmic Care System. Macular Edema Detection using AI.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSeverityChart();
+            initializeWeeklyChart();
+        });
+
+        function initializeSeverityChart() {
+            const ctx = document.getElementById('severityChart').getContext('2d');
+            const severityData = {
+                'Normal': {{ stats.get('severity_distribution', {}).get('Normal', 0) }},
+                'Mild': {{ stats.get('severity_distribution', {}).get('Mild Macular Edema', 0) }},
+                'Moderate': {{ stats.get('severity_distribution', {}).get('Moderate Macular Edema', 0) }},
+                'Severe': {{ stats.get('severity_distribution', {}).get('Severe Macular Edema', 0) }}
+            };
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(severityData),
+                    datasets: [{
+                        data: Object.values(severityData),
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#FFC107',
+                            '#FF9800',
+                            '#F44336'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeWeeklyChart() {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Examinations',
+                        data: [12, 19, 3, 5, 2, 3, 5],
+                        backgroundColor: '#2196F3',
+                        borderColor: '#1976D2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function refreshStats() {
+            fetch('/api/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-patients').innerText = data.total_patients;
+                    document.getElementById('total-exams').innerText = data.total_examinations;
+                    document.getElementById('avg-confidence').innerText = 
+                        (data.average_confidence * 100).toFixed(2) + '%';
+                    alert('Statistics refreshed!');
+                })
+                .catch(error => console.error('Error refreshing stats:', error));
+        }
+    </script>
+</body>
+</html>

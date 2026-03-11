@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Ophthalmic Care System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>📊 Prediction Results</h1>
+                <div class="header-right">
+                    <span>Welcome, Dr. {{ username }}!</span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-content">
+                <ul class="nav-menu">
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('upload') }}">Upload Image</a></li>
+                    <li><a href="#" onclick="alert('Patient search coming soon!')">Patient Search</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Patient Information -->
+                <section class="result-section">
+                    <h2>Patient Information</h2>
+                    <div class="patient-info">
+                        <div class="info-item">
+                            <label>Name:</label>
+                            <span>{{ patient['name'] }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Age:</label>
+                            <span>{{ patient['age'] }} years</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Gender:</label>
+                            <span>{% if patient['gender'] == 'M' %}Male{% elif patient['gender'] == 'F' %}Female{% else %}Other{% endif %}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Contact:</label>
+                            <span>{{ patient['contact'] }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Date:</label>
+                            <span>{{ exam['created_at'] }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Prediction Results -->
+                <section class="result-section">
+                    <h2>AI Analysis Results</h2>
+                    <div class="prediction-result">
+                        <div class="severity-box severity-{{ exam['predicted_class'] }}">
+                            <h3>Diagnosed Severity</h3>
+                            <p class="severity-level">{{ exam['severity'] }}</p>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <label>Diagnostic Confidence</label>
+                                <p class="result-value">{{ "%.2f"|format(exam['confidence'] * 100) }}%</p>
+                            </div>
+
+                            <div class="result-item">
+                                <label>Risk Level</label>
+                                <p class="result-value risk-{{ exam['predicted_class'] }}">{{ exam['risk_level'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="description-box">
+                        <h3>Diagnosis Description</h3>
+                        <p>{{ exam['description'] }}</p>
+                    </div>
+                </section>
+
+                <!-- Probability Distribution -->
+                <section class="result-section">
+                    <h2>Classification Probabilities</h2>
+                    <div class="probability-chart">
+                        {% for class_name, prob in exam['all_probabilities'].items() %}
+                        <div class="probability-bar">
+                            <label>{{ class_name }}</label>
+                            <div class="bar-container">
+                                <div class="bar" style="width: {{ prob * 100 }}%"></div>
+                            </div>
+                            <span>{{ "%.2f"|format(prob * 100) }}%</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Explainable AI (Grad-CAM) -->
+                {% if exam.get('gradcam_path') %}
+                <section class="result-section">
+                    <h2>Explainable AI - Grad-CAM Heatmap</h2>
+                    <p>The highlighted regions show areas of the retina that contributed most to the AI diagnosis:</p>
+                    <div class="gradcam-container">
+                        <img src="{{ url_for('static', filename='../' + exam['gradcam_path']) }}" alt="Grad-CAM Visualization">
+                    </div>
+                    <small>Red/Orange areas: High importance | Blue areas: Low importance</small>
+                </section>
+                {% endif %}
+
+                <!-- Medical Recommendation -->
+                <section class="result-section">
+                    <h2>Clinical Recommendation</h2>
+                    <div class="recommendation-box">
+                        <p>{{ exam['recommendation'] }}</p>
+                    </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <section class="result-actions">
+                    <div class="action-buttons">
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                            📁 Analyze Another Image
+                        </a>
+                        <a href="{{ url_for('history', patient_id=exam['patient_id']) }}" class="btn btn-secondary">
+                            📋 View Patient History
+                        </a>
+                        <button onclick="printResult()" class="btn btn-primary">
+                            🖨️ Print Report
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Ophthalmic Care System. Macular Edema Detection using AI.</p>
+        </footer>
+    </div>
+
+    <script>
+        function printResult() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
